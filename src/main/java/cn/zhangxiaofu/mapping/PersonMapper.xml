@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.zhangxiaofu.dao.PersonMapper" >
+  <resultMap id="BaseResultMap" type="cn.zhangxiaofu.model.Person" >
+    <id column="person_id" property="personId" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="gender" property="gender" jdbcType="INTEGER" />
+    <result column="person_addr" property="personAddr" jdbcType="VARCHAR" />
+    <result column="birthday" property="birthday" jdbcType="DATE" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    person_id, name, gender, person_addr, birthday
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from person
+    where person_id = #{personId,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from person
+    where person_id = #{personId,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="cn.zhangxiaofu.model.Person" >
+    insert into person (person_id, name, gender, 
+      person_addr, birthday)
+    values (#{personId,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{gender,jdbcType=INTEGER}, 
+      #{personAddr,jdbcType=VARCHAR}, #{birthday,jdbcType=DATE})
+  </insert>
+  <insert id="insertSelective" parameterType="cn.zhangxiaofu.model.Person" >
+    insert into person
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="personId != null" >
+        person_id,
+      </if>
+      <if test="name != null" >
+        name,
+      </if>
+      <if test="gender != null" >
+        gender,
+      </if>
+      <if test="personAddr != null" >
+        person_addr,
+      </if>
+      <if test="birthday != null" >
+        birthday,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="personId != null" >
+        #{personId,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="gender != null" >
+        #{gender,jdbcType=INTEGER},
+      </if>
+      <if test="personAddr != null" >
+        #{personAddr,jdbcType=VARCHAR},
+      </if>
+      <if test="birthday != null" >
+        #{birthday,jdbcType=DATE},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="cn.zhangxiaofu.model.Person" >
+    update person
+    <set >
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="gender != null" >
+        gender = #{gender,jdbcType=INTEGER},
+      </if>
+      <if test="personAddr != null" >
+        person_addr = #{personAddr,jdbcType=VARCHAR},
+      </if>
+      <if test="birthday != null" >
+        birthday = #{birthday,jdbcType=DATE},
+      </if>
+    </set>
+    where person_id = #{personId,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="cn.zhangxiaofu.model.Person" >
+    update person
+    set name = #{name,jdbcType=VARCHAR},
+      gender = #{gender,jdbcType=INTEGER},
+      person_addr = #{personAddr,jdbcType=VARCHAR},
+      birthday = #{birthday,jdbcType=DATE}
+    where person_id = #{personId,jdbcType=INTEGER}
+  </update>
+  
+  <select id="getAll" resultMap="BaseResultMap">
+  	select * from person
+  </select>
+  <!-- 一对多关系中的N+1方式，很低效 -->
+  <select id="selectPersonUser" parameterType="java.lang.Integer" resultType="cn.zhangxiaofu.model.PersonUser" >
+  		SELECT
+			person_user.id,
+			person_user.pid,
+			person_user.uid
+			FROM
+			person_user
+			where person_user.pid=#{pid,jdbcType=INTEGER}
+			  		
+  </select>
+  <resultMap type="cn.zhangxiaofu.model.Person" id="PersonResultMap" extends="BaseResultMap">
+  	<collection property="personUser" javaType="list" column="person_id" select="selectPersonUser"></collection>
+  </resultMap>
+  <select id="getAll1" resultMap="PersonResultMap">
+  		SELECT
+			person.person_id,
+			person.`name`,
+			person.gender,
+			person.person_addr,
+			person.birthday
+			FROM
+			person
+  </select>
+  <!-- N+1 end -->
+  
+  <!-- 一多关系表结构，关联查询 -->
+  <resultMap type="cn.zhangxiaofu.model.Person" id="PersonResultMap2" extends="BaseResultMap">
+  		<collection property="personUser"  javaType="list" ofType="cn.zhangxiaofu.model.PersonUser">
+  		    <id column="id" property="id" jdbcType="INTEGER" />
+		    <result column="pid" property="pid" jdbcType="INTEGER" />
+		    <result column="uid" property="uid" jdbcType="INTEGER" />
+  		</collection>
+  		
+  </resultMap>
+  <select id="getAll2" resultMap="PersonResultMap2">
+  		SELECT
+			person_user.id,
+			person_user.pid,
+			person_user.uid,
+			person.person_id,
+			person.`name`,
+			person.gender,
+			person.person_addr,
+			person.birthday
+			FROM
+			person_user
+			INNER JOIN person ON person_user.pid = person.person_id
+			  		
+  </select>
+ <!-- 一对多通过中间表 end --> 
+ 
+   <!--  此做法用中间表   比较麻烦 （在获取时） 多对多通过中间表-  多对多关系表结构，关联查询 -->
+   <resultMap type="cn.zhangxiaofu.model.Person" id="PersonResultMap3" extends="BaseResultMap">
+   		<collection property="personUser"  javaType="list" ofType="cn.zhangxiaofu.model.PersonUser">
+  		    <id column="id" property="id" jdbcType="INTEGER" />
+		    <result column="pid" property="pid" jdbcType="INTEGER" />
+		    <result column="uid" property="uid" jdbcType="INTEGER" />
+		    	<association property="user" javaType="cn.zhangxiaofu.model.User">
+		    	      <!-- column 对应sql中的别名   property对应modle中的属性 -->
+		    		 <id column="userId" property="id" jdbcType="INTEGER" />
+				    <result column="userName" property="name" jdbcType="VARCHAR" />
+				    <result column="age" property="age" jdbcType="INTEGER" />
+		    	</association>
+  		</collection>
+   </resultMap>
+ <select id="getAll3" resultMap="PersonResultMap3">
+ 		SELECT
+			person_user.id,
+			person_user.pid,
+			person_user.uid,
+			person.person_id,
+			person.`name`,
+			person.gender,
+			person.person_addr,
+			person.birthday,
+			`user`.id userId,
+			`user`.`name` userName,
+			`user`.age
+			FROM
+			person_user
+			INNER JOIN person ON person_user.pid = person.person_id
+			INNER JOIN `user` ON person_user.uid = `user`.id
+			 		
+ </select>
+   <!-- 多对多通过中间表结构end  -->
+   
+   
+   <!-- 多对多关系表  简单常用的做法  -->
+   <resultMap type="cn.zhangxiaofu.model.Person" id="PersonResultMap4" extends="BaseResultMap">
+   		<collection property="users"  javaType="list" ofType="cn.zhangxiaofu.model.User">
+   					<id column="userId" property="id" jdbcType="INTEGER" />
+				    <result column="userName" property="name" jdbcType="VARCHAR" />
+				    <result column="age" property="age" jdbcType="INTEGER" />
+   		</collection>
+   </resultMap>
+   <select id="getAll4" resultMap="PersonResultMap4">
+   		SELECT
+			person_user.id,
+			person_user.pid,
+			person_user.uid,
+			person.person_id,
+			person.`name`,
+			person.gender,
+			person.person_addr,
+			person.birthday,
+			`user`.id userId,
+			`user`.`name` userName,
+			`user`.age
+			FROM
+			person_user
+			INNER JOIN person ON person_user.pid = person.person_id
+			INNER JOIN `user` ON person_user.uid = `user`.id
+   </select>
+   
+   <!-- 多对多关系表  简单常用的做法end  -->
+</mapper>
